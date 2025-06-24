@@ -1,0 +1,11 @@
+streamlit
+pandas
+plotly
+altair
+nltk
+bertopic
+scikit-learn
+sentence-transformers
+umap-learn
+hdbscan
+Sastrawi
