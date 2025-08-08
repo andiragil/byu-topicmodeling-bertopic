@@ -10,6 +10,20 @@ from nltk.corpus import stopwords
 from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
 import streamlit.components.v1 as components
 
+
+
+# 1. Set layout ke wide
+st.set_page_config(layout="wide")
+
+# 2. Lebarkan container
+st.markdown("""
+<style>
+    .block-container { max-width: 96% !important; padding-top: 1rem; }
+</style>
+""", unsafe_allow_html=True)
+
+
+
 nltk.download('stopwords')
 
 # --- Stopwords setup ---
