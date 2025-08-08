@@ -257,7 +257,7 @@ try:
                     st.dataframe(df_summary[['Topic', 'Name', 'Count']])
 
                     st.subheader("Visualisasi Topik (HTML)")
-                    with open("topics.html", "r", encoding="utf-8") as f:
+                    with open("barchart_topics.html", "r", encoding="utf-8") as f:
                         html_data = f.read()
                     components.html(html_data, height=600, scrolling=True)
 
@@ -268,7 +268,7 @@ try:
             with tab2:
                 st.subheader("Pemetaan Topik")
                 st.image("newplot.png", caption="Visualisasi Intertopic Distance Map (BERTopic)", width=600)
-                with open("inter_topics.html", "r", encoding="utf-8") as f:
+                with open("intertopic_topics.html", "r", encoding="utf-8") as f:
                     inter_html = f.read()
                 components.html(inter_html, height=650, scrolling=True)
 
