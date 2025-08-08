@@ -13,7 +13,12 @@ import streamlit.components.v1 as components
 
 
 # 1. Set layout ke wide
-st.set_page_config(layout="wide")
+# --- Setup ---
+st.set_page_config(
+    page_title="Analisis Topik by.U",
+    layout="wide"
+)
+
 
 # 2. Lebarkan container
 st.markdown("""
@@ -77,11 +82,6 @@ def remove_stopwords(text):
         return " ".join(filtered)
     return ""
 
-# --- Setup ---
-st.set_page_config(
-    page_title="Analisis Topik by.U",
-    layout="wide"
-)
 
 st.title("Visualisasi Pemodelan Topik Ulasan Aplikasi by.U dengan BERTopic")
 
@@ -271,9 +271,16 @@ try:
                     st.dataframe(df_summary[['Topic', 'Name', 'Count']])
 
                     st.subheader("Visualisasi Topik (HTML)")
+                    # Baca file HTML hasil rebuild
                     with open("barchart_topics.html", "r", encoding="utf-8") as f:
                         html_data = f.read()
-                    components.html(html_data, height=600, scrolling=True)
+
+                    # Render dengan lebar penuh & tinggi cukup
+                    components.html(
+                        f'<div style="width:100%; max-width:100%;">{html_data}</div>',
+                        height=820,  # naikin biar nggak terpotong vertikal
+                        scrolling=True
+)
 
 
                 except FileNotFoundError:
