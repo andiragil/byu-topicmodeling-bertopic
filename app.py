@@ -8,6 +8,7 @@ import plotly.express as px
 import nltk
 from nltk.corpus import stopwords
 from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
+import streamlit.components.v1 as components
 
 nltk.download('stopwords')
 
@@ -229,7 +230,7 @@ try:
                 Visualisasi ini membantu dalam mengidentifikasi topik-topik dominan yang paling banyak dibahas oleh pengguna.
                 """)
             tab1, tab2, tab3 = st.tabs([
-                "Ringkasan Topik", "Distribusi Topik", "Kesimpulan Hasil"
+                "Ringkasan Topik", "Pemetaan Topik", "Kesimpulan Hasil"
             ])
 
             with tab1:
@@ -255,12 +256,21 @@ try:
                     """)
                     st.dataframe(df_summary[['Topic', 'Name', 'Count']])
 
+                    st.subheader("Visualisasi Topik (HTML)")
+                    with open("topics.html", "r", encoding="utf-8") as f:
+                        html_data = f.read()
+                    components.html(html_data, height=600, scrolling=True)
+
+
                 except FileNotFoundError:
                     st.error("File topik_summary.csv tidak ditemukan.")
 
             with tab2:
-                st.subheader("Distribusi Topik")
+                st.subheader("Pemetaan Topik")
                 st.image("newplot.png", caption="Visualisasi Intertopic Distance Map (BERTopic)", width=600)
+                with open("inter_topics.html", "r", encoding="utf-8") as f:
+                    inter_html = f.read()
+                components.html(inter_html, height=650, scrolling=True)
 
                 # Penjelasan dari Intertopic Distance Map
                 st.markdown("""
