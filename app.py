@@ -10,25 +10,6 @@ from nltk.corpus import stopwords
 from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
 import streamlit.components.v1 as components
 
-
-
-# 1. Set layout ke wide
-# --- Setup ---
-st.set_page_config(
-    page_title="Analisis Topik by.U",
-    layout="wide"
-)
-
-
-# 2. Lebarkan container
-st.markdown("""
-<style>
-    .block-container { max-width: 96% !important; padding-top: 1rem; }
-</style>
-""", unsafe_allow_html=True)
-
-
-
 nltk.download('stopwords')
 
 # --- Stopwords setup ---
@@ -82,6 +63,11 @@ def remove_stopwords(text):
         return " ".join(filtered)
     return ""
 
+# --- Setup ---
+st.set_page_config(
+    page_title="Analisis Topik by.U",
+    layout="wide"
+)
 
 st.title("Visualisasi Pemodelan Topik Ulasan Aplikasi by.U dengan BERTopic")
 
@@ -270,18 +256,6 @@ try:
                     """)
                     st.dataframe(df_summary[['Topic', 'Name', 'Count']])
 
-                    st.subheader("Visualisasi Topik (HTML)")
-                    # Baca file HTML hasil rebuild
-                    with open("barchart_topics.html", "r", encoding="utf-8") as f:
-                        html_data = f.read()
-
-                    # Render dengan lebar penuh & tinggi cukup
-                    components.html(
-                        f'<div style="width:100%; max-width:100%;">{html_data}</div>',
-                        height=820,  # naikin biar nggak terpotong vertikal
-                        scrolling=True
-)
-
 
                 except FileNotFoundError:
                     st.error("File topik_summary.csv tidak ditemukan.")
@@ -289,7 +263,7 @@ try:
             with tab2:
                 st.subheader("Pemetaan Topik")
                 st.image("newplot.png", caption="Visualisasi Intertopic Distance Map (BERTopic)", width=600)
-                with open("intertopic_topics.html", "r", encoding="utf-8") as f:
+                with open("inter_topics.html", "r", encoding="utf-8") as f:
                     inter_html = f.read()
                 components.html(inter_html, height=650, scrolling=True)
 
@@ -305,12 +279,6 @@ try:
                 - Sebagian besar topik terlihat **cukup tersebar**, menandakan **keragaman isi topik** yang baik.
                 - Tidak ada tumpukan berlebihan antar topik, yang berarti model berhasil **memisahkan tema utama** dari data ulasan.
                 """)
-
-                # Tampilkan tab per topik dan gambarnya
-                topic_tabs = st.tabs([f"Topik {i}" for i in range(8)])
-                for i in range(8):
-                    with topic_tabs[i]:
-                        st.image(f"topik_{i}.png", caption=f"Topik {i}", width=400)
 
 
             with tab3:
