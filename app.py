@@ -5,65 +5,7 @@ import math
 import re
 import altair as alt
 import plotly.express as px
-import nltk
-from nltk.corpus import stopwords
-from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
-import streamlit.components.v1 as components
 
-nltk.download('stopwords')
-
-# --- Stopwords setup ---
-stop_factory = StopWordRemoverFactory()
-stopword_sastrawi = set(stop_factory.get_stop_words())
-stopwords_nltk = set(stopwords.words('english'))
-more_stopword = {
-    'gw','gue','gua','lu','lo','elo','elu','ya','ye','lah','mah','nih',
-    'kok','dong','bgt','banget','kyk','kek','aja','udah','yg',
-    'gak','gk','ga','nggak','gausah','kayak','cuma',
-    'doang','sih','lagi','lg','jd','jdi','trs','trus','sy','tetep',
-    'klo','gitu','terus','makanya','begitu','jg','skrng','pdhl',
-    'tpi','ny','udh','knp','gt','deh','lho','lhoh','nya','donk','bener','koq','sich'
-}
-stopword_combined = stopword_sastrawi.union(stopwords_nltk).union(more_stopword)
-
-# --- Fungsi Preprocessing ---
-def remove_short_reviews(df):
-    return df[df['content'].apply(lambda x: len(x.split()) >= 10)]
-
-def case_folding(text):
-    return text.lower() if isinstance(text, str) else ""
-
-
-def normalize_app_name(text):
-    if pd.isnull(text): return ""
-    text = text.lower()
-    text = re.sub(r'\bby\.?u\b', 'byu', text)
-    text = re.sub(r'\bby u\b', 'byu', text)
-    return text
-
-
-
-def filtering_combined(text):
-    if pd.isnull(text): return ""
-    text = re.sub(r"([.,;:!?()\[\]{}\"'/])(\w)", r"\1 \2", text)
-    text = re.sub(r"(\w)([.,;:!?()\[\]{}\"'/])", r"\1 \2", text)
-    text = re.sub(r",(?=\S)", ", ", text)
-    text = re.sub(r"http\S+|www\S+", "", text)
-    text = re.sub(r"\d+", "", text)
-    text = re.sub(r"[^a-zA-Z\s]", "", text)
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
-
-
-
-def remove_stopwords(text):
-    if isinstance(text, str):
-        words = text.lower().split()
-        filtered = [w for w in words if w not in stopword_combined]
-        return " ".join(filtered)
-    return ""
-
-# --- Setup ---
 st.set_page_config(
     page_title="Analisis Topik by.U",
     layout="wide"
@@ -71,38 +13,25 @@ st.set_page_config(
 
 st.title("Visualisasi Pemodelan Topik Ulasan Aplikasi by.U dengan BERTopic")
 
-# --- Sidebar Navigasi Utama yang Lebih Menarik ---
 with st.sidebar:
-    # Judul Sidebar
     st.title("Navigasi Utama")
-    # Pemisah garis horizontal
     st.markdown("---")
-    # Selectbox Navigasi
     menu = st.selectbox(
         "Pilih Halaman:",
         ["Dataset Awal", "Preprocessing", "Visualisasi"]
     )
 
-# --- Load Dataset dan Preprocessing ---
+# --- Load Dataset ---
 try:
-    df = pd.read_csv("byu_streamlit.csv")
+    df = pd.read_csv("reviews_preprocessed.csv")
 
     if 'content' not in df.columns:
         st.error("Kolom 'content' tidak ditemukan.")
     else:
-        # Preprocessing
-        df = remove_short_reviews(df)
-        df['case_folding'] = df['content'].apply(case_folding)
-        df['normalized_text'] = df['case_folding'].apply(normalize_app_name)
-        df['filtered_text'] = df['normalized_text'].apply(filtering_combined)
-        df['final_text'] = df['filtered_text'].apply(remove_stopwords)
-
         # ========== Halaman 1: Dataset Awal ==========
         if menu == "Dataset Awal":
             st.subheader("Dataset Awal")
             st.markdown("Data ini digunakan sebagai dasar proses preprocessing dan pemodelan topik menggunakan metode BERTopic.")
-
-            # Informasi Dataset
             st.markdown("""
             ### 📌 Informasi Dataset:
             - **Sumber data:** Google Play Store (Aplikasi by.U)
@@ -110,33 +39,21 @@ try:
             - **Rentang waktu ulasan:** 24 Oktober 2019 - 21 Mei 2025
             - **Bahasa dominan:** Bahasa Indonesia, dengan istilah serapan Bahasa Inggris
             """)
-
-            # Penjelasan kolom
             st.markdown("""
             ### 🧾 Penjelasan Kolom:
             - **`content`**: Berisi isi ulasan yang ditulis oleh pengguna aplikasi. Kolom ini menjadi fokus utama dalam pemodelan topik.
             - **`at`**: Tanggal ketika ulasan diberikan. Digunakan untuk mengetahui rentang waktu pengumpulan data.
             """)
 
-            # Setup pagination (hitung dulu)
             items_per_page = 10
             total_rows = len(df)
             total_pages = math.ceil(total_rows / items_per_page)
-
-            # Ambil nilai default halaman pertama
-            page_number = 1  # Default
-
-            # Cek jika 'page_ds' sudah ada di session_state, gunakan nilainya
+            page_number = 1 
             if 'page_ds' in st.session_state:
                 page_number = st.session_state['page_ds']
-
             start_idx = (page_number - 1) * items_per_page
             end_idx = start_idx + items_per_page
-
-            # Tampilkan tabel dulu
             st.dataframe(df.iloc[start_idx:end_idx][['content', 'at']])
-
-            # Pagination tampil di bawah tabel
             col1, col2 = st.columns([1, 5])
             with col1:
                 page_number = st.number_input("Pilih halaman:", 1, total_pages, page_number, key="page_ds")
@@ -155,17 +72,14 @@ try:
                 "Case Folding", "Normalisasi 'byu'", "Penghapusan Simbol/Angka/URL", "Stopword Removal"
             ])
 
-            # Pagination setup
             items_per_page = 10
             total_rows = len(df)
             total_pages = math.ceil(total_rows / items_per_page)
-
             col1, col2 = st.columns([1, 5])
             with col1:
                 page_number = st.number_input("Pilih halaman:", 1, total_pages, 1, key="page_pre")
             with col2:
                 st.markdown(f"**Halaman {page_number} dari {total_pages}**")
-
             start_idx = (page_number - 1) * items_per_page
             end_idx = start_idx + items_per_page
             df_page = df.iloc[start_idx:end_idx]
@@ -179,8 +93,9 @@ try:
                 st.dataframe(df_page[['content', 'case_folding']].rename(columns={
                     'content': 'Sebelum',
                     'case_folding': 'Sesudah'
-                }))
+                }), use_container_width=True)
 
+             
         
             # --- TAB 2: Normalisasi ---
             with tab2:
@@ -188,9 +103,9 @@ try:
                 Proses ini mengganti variasi penulisan kata 'by u', 'by.u', dll menjadi bentuk konsisten 'byu'.
                 Normalisasi ini penting untuk menghindari fragmentasi makna dalam analisis topik.
                 """)
-                st.dataframe(df_page[['case_folding', 'normalized_text']].rename(columns={
+                st.dataframe(df_page[['case_folding', 'normalized']].rename(columns={
                     'case_folding': 'Sebelum',
-                    'normalized_text': 'Sesudah'
+                    'normalized': 'Sesudah'
                 }))
 
 
@@ -203,8 +118,8 @@ try:
                 - URL atau tautan
                 Proses ini membuat data lebih bersih dan bebas dari noise.
                 """)
-                st.dataframe(df_page[['normalized_text', 'filtered_text']].rename(columns={
-                    'normalized_text': 'Sebelum',
+                st.dataframe(df_page[['normalized', 'filtered_text']].rename(columns={
+                    'normalized': 'Sebelum',
                     'filtered_text': 'Sesudah'
                 }))
 
@@ -220,7 +135,6 @@ try:
                     'filtered_text': 'Sebelum',
                     'final_text': 'Sesudah'
                 }))
-
 
         # ========== Halaman 3: Visualisasi ==========
         elif menu == "Visualisasi":
@@ -238,23 +152,30 @@ try:
                     df_summary = pd.read_csv("topik_summary.csv")
                     df_summary = df_summary[df_summary["Topic"] != -1]
 
-                    # Tampilkan pie chart interaktif
-                    st.subheader("Proporsi Dokumen per Topik")
+                    st.subheader("Visualisasi dalam Bentuk Bar Chart")
+                    st.markdown("""
+                    Bar chart berikut menunjukkan **lima kata kunci dominan pada setiap topik** 
+                    beserta skor bobotnya (C-TF-IDF). Skor ini menunjukkan tingkat kekhasan kata 
+                    terhadap topik tersebut dibandingkan topik lain.
+                    """)
+                    st.image("barchart.png", caption="Top Words Scores", width=800)
+                    
+                    st.subheader("Visualisasi dalam Bentuk Pie Chart")
                     fig = px.pie(df_summary, values='Count', names='Name')
                     st.plotly_chart(fig)
 
-                    # Tabel ringkasan
-                    st.subheader("Tabel Ringkasan Topik")
-                    st.markdown("""
-                    Berikut ini adalah tabel ringkasan topik yang dihasilkan dari proses pemodelan BERTopic:
+                    with st.expander("Lihat Tabel dalam bentuk Tabel Topik"):
+                        st.subheader("Tabel Ringkasan Topik")
+                        st.markdown("""
+                        Berikut ini adalah tabel ringkasan topik yang dihasilkan dari proses pemodelan BERTopic:
 
-                    - **`Topic`**: ID atau nomor urut dari masing-masing topik yang terdeteksi.
-                    - **`Name`**: Representasi topik berdasarkan kumpulan kata kunci paling dominan dari setiap topik.
-                    - **`Count`**: Jumlah dokumen (ulasan) yang termasuk dalam masing-masing topik.
+                        - **`Topic`**: ID atau nomor urut dari masing-masing topik yang terdeteksi.
+                        - **`Name`**: Representasi topik berdasarkan kumpulan kata kunci paling dominan dari setiap topik.
+                        - **`Count`**: Jumlah dokumen (ulasan) yang termasuk dalam masing-masing topik.
 
-                    Tabel ini berguna untuk melihat topik mana yang paling sering dibahas oleh pengguna aplikasi by.U.
-                    """)
-                    st.dataframe(df_summary[['Topic', 'Name', 'Count']])
+                        Tabel ini berguna untuk melihat topik mana yang paling sering dibahas oleh pengguna aplikasi by.U.
+                        """)
+                        st.dataframe(df_summary[['Topic', 'Name', 'Count']])
 
 
                 except FileNotFoundError:
@@ -263,8 +184,6 @@ try:
             with tab2:
                 st.subheader("Pemetaan Topik")
                 st.image("newplot.png", caption="Visualisasi Intertopic Distance Map (BERTopic)", width=600)
-
-                # Penjelasan dari Intertopic Distance Map
                 st.markdown("""
                 **Interpretasi Peta Jarak Topik (Intertopic Distance Map):**
 
@@ -287,22 +206,17 @@ try:
                 Berikut adalah ringkasan hasil eksplorasi:
                 """)
 
-                # Baca file hasil topik
                 try:
                     df_summary = pd.read_csv("topik_summary.csv")
-                    df_summary = df_summary[df_summary["Topic"] != -1]  # Exclude outliers
+                    df_summary = df_summary[df_summary["Topic"] != -1]
                     df_summary = df_summary.sort_values("Count", ascending=False)
-
-                    # Ringkasan umum
                     st.markdown(f"""
                     ### Ringkasan Umum:
                     - **Jumlah topik terbentuk:** {len(df_summary)} topik utama.
                     - **Topik paling dominan:** Topik {df_summary.iloc[0]['Topic']}, mencakup ~{round(100 * df_summary.iloc[0]['Count'] / df_summary['Count'].sum(), 1)}% dokumen.
                     """)
 
-                    # Penjelasan per topik
                     st.markdown("### Penjelasan Tiap Topik:")
-
                     for idx, row in df_summary.iterrows():
                         st.markdown(f"""
                         #### 🔹 Topik {row['Topic']}: *{row['Representation']}*
@@ -313,9 +227,7 @@ try:
                 except FileNotFoundError:
                     st.error("File topik_summary.csv tidak ditemukan.")
 
-
-
 except FileNotFoundError:
-    st.error("File 'byu_streamlit.csv' tidak ditemukan.")
+    st.error("File 'reviews_preprocessed.csv' tidak ada.")
 except Exception as e:
     st.error(f"Terjadi error: {e}")
