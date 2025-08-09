@@ -263,9 +263,6 @@ try:
             with tab2:
                 st.subheader("Pemetaan Topik")
                 st.image("newplot.png", caption="Visualisasi Intertopic Distance Map (BERTopic)", width=600)
-                with open("inter_topics.html", "r", encoding="utf-8") as f:
-                    inter_html = f.read()
-                components.html(inter_html, height=650, scrolling=True)
 
                 # Penjelasan dari Intertopic Distance Map
                 st.markdown("""
@@ -319,6 +316,6 @@ try:
 
 
 except FileNotFoundError:
-    st.error("File 'byu_reviewsNew.csv' tidak ditemukan.")
+    st.error("File 'byu_streamlit.csv' tidak ditemukan.")
 except Exception as e:
     st.error(f"Terjadi error: {e}")
