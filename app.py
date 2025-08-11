@@ -5,6 +5,7 @@ import math
 import re
 import altair as alt
 import plotly.express as px
+import textwrap
 
 st.set_page_config(
     page_title="Analisis Topik by.U",
@@ -200,9 +201,7 @@ try:
             with tab3:
                 st.subheader("Kesimpulan Hasil Pemodelan Topik")
                 st.markdown("""
-                Hasil analisis topik menggunakan **BERTopic** berhasil mengelompokkan **10.000 ulasan pengguna aplikasi by.U** ke dalam sejumlah tema utama.  
-                Setiap topik merepresentasikan pola keluhan, komentar, atau pujian yang muncul secara berulang.
-                
+                Hasil analisis topik menggunakan **BERTopic** berhasil mengelompokkan **10.000 ulasan pengguna by.U** ke dalam sejumlah tema utama.
                 Berikut adalah ringkasan hasil eksplorasi:
                 """)
 
@@ -210,20 +209,36 @@ try:
                     df_summary = pd.read_csv("topik_summary.csv")
                     df_summary = df_summary[df_summary["Topic"] != -1]
                     df_summary = df_summary.sort_values("Count", ascending=False)
+
                     st.markdown(f"""
                     ### Ringkasan Umum:
                     - **Jumlah topik terbentuk:** {len(df_summary)} topik utama.
-                    - **Topik paling dominan:** Topik {df_summary.iloc[0]['Topic']}, mencakup ~{round(100 * df_summary.iloc[0]['Count'] / df_summary['Count'].sum(), 1)}% dokumen.
+                    - **Nilai coherence yang didapat:  0.6050**
+                    - **Topik paling dominan:** Topik {int(df_summary.iloc[0]['Topic'])}, mencakup ~{round(100 * df_summary.iloc[0]['Count'] / df_summary['Count'].sum(), 1)}% dokumen.
                     """)
 
                     st.markdown("### Penjelasan Tiap Topik:")
-                    for idx, row in df_summary.iterrows():
+                    interpretasi = {
+                        0:"Keluhan performa aplikasi/jaringan.", 1:"Pembelian/pembayaran.",
+                        2:"Sinyal hilang/tidak stabil.", 3:"Unlimited & FUP.",
+                        4:"Kemudahan/promo/harga.", 5:"Keluhan jaringan saat digunakan untuk youtube, instagram, dll.",
+                        6:"Keluhan berulang.", 7:"Login/OTP/server.", 8:"Virtual account."
+                    }
+
+                    for _, row in df_summary.iterrows():
+                        topic_id = int(row["Topic"])
+                        rep = str(row.get("Representation",""))
+                        keywords4 = ", ".join([w.strip() for w in rep.split(",")[:4]]) or str(row.get("Name",""))
+
                         st.markdown(f"""
-                        #### 🔹 Topik {row['Topic']}: *{row['Representation']}*
-                        - Jumlah dokumen: {row['Count']}
+                        #### 🔹 Topik {topic_id}: *{keywords4}*
+                        - Jumlah dokumen: {int(row['Count'])}
+                        - **Interpretasi singkat:** {interpretasi.get(topic_id, "-")}
                         - Contoh ulasan representatif:
-                        > _"{row['Representative_Docs']}"_
                         """)
+
+                        with st.expander("Lihat ulasan"):
+                            st.write(str(row.get("Representative_Docs","")).replace("\n"," "))
                 except FileNotFoundError:
                     st.error("File topik_summary.csv tidak ditemukan.")
 
